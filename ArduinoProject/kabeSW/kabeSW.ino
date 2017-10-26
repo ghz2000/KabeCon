@@ -1,3 +1,7 @@
+extern "C" {
+  #include <user_interface.h>
+}
+
 #include "AdvancedOTA.h"
 #include <Servo.h>
 
@@ -18,6 +22,41 @@ int minimum = 256;
 int maximum = 0;
 
 bool isOn = false;
+bool amazonFlag = false;
+
+void ICACHE_FLASH_ATTR wifi_handle_event_cb(System_Event_t *evt) {
+
+  if (evt->event == EVENT_SOFTAPMODE_PROBEREQRECVED){   //プローブリクエスト以外は無視
+    uint8_t* mac = evt->event_info.ap_probereqrecved.mac;
+    if ( checkMAC(mac) ){
+        amazonFlag = true;
+//      Serial.print("Probe MAC: ");
+//      Serial.println( getStrMAC(mac) );
+    }
+  }
+  
+  if (evt->event != EVENT_SOFTAPMODE_STACONNECTED) return; 
+
+  uint8_t* mac = evt->event_info.sta_connected.mac;
+//  Serial.print("MAC: ");
+//  Serial.println( getStrMAC(mac) );
+}
+
+String getStrMAC(uint8_t mac[6]){
+  String res = String(mac[0], HEX) + ":" + String(mac[1], HEX) + ":" + String(mac[2], HEX) + ":" +
+                String(mac[3], HEX) + ":" + String(mac[4], HEX) + ":" + String(mac[5], HEX);
+  return res;
+}
+
+bool checkMAC(uint8_t* mac){
+  String macStr = getStrMAC(mac) ;
+
+  if( macStr.compareTo("ab:c:d:ef:10:23") ==0 ){
+    return 1;
+  }
+
+  return 0;
+}
 
 void setup() {
 //  Serial.begin(74880);
@@ -43,6 +82,10 @@ void setup() {
 
 
 void loop() {
+  static unsigned long previousAmazon = 0;
+  static unsigned long currentMillis = 0;
+  const unsigned long intervalAmazon = 10000;
+  currentMillis = millis();
   listener();
 
   if (digitalRead(leftSW) == LOW) {
@@ -58,6 +101,13 @@ void loop() {
     while (digitalRead(bootSW) == LOW) {}
   }
 
+  if (amazonFlag){
+    if(currentMillis - previousAmazon >= intervalAmazon){
+      swTurn();
+      previousAmazon = currentMillis;
+    }
+    amazonFlag = false;
+  }
 
   delay(100);
 }

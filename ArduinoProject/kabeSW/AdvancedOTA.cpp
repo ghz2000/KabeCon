@@ -139,11 +139,46 @@ void wifiSetup(ESP8266WiFiMulti *WiFiMulti, ESP8266WebServer *server){
 
   ////// WiFi Connection
 
-  WiFi.mode(WIFI_STA);
+  WiFi.mode(WIFI_AP_STA);
 
   WiFi.softAP(ap_ssid, ap_pass);
   Serial.print("AP mode IP:");
   Serial.println(WiFi.softAPIP());
+
+  WiFiMulti->addAP(sta_ssid, sta_pass);
+
+  for(int i=0; i<10; i++){
+    switch(WiFiMulti->run()){
+      case WL_CONNECTED:
+        Serial.println("Connection Successful");
+        Serial.print("IP address: ");
+        Serial.println(WiFi.localIP());
+        break;
+      case WL_NO_SSID_AVAIL:
+        Serial.println("Searching SSID");
+        delay(5000);
+        continue;
+      case WL_CONNECT_FAILED:
+        Serial.println("Connection Failed. wrong password");
+        delay(5000);
+        continue;
+      case WL_IDLE_STATUS:
+        Serial.println("Connection Idle Status");
+        delay(5000);
+        continue;
+      case WL_DISCONNECTED:
+        Serial.println("Connection Disconnected");
+        delay(5000);
+        continue;
+      default :
+        Serial.println("default error");
+        delay(5000);
+        ESP.restart();
+        continue;
+    }
+    break;
+  }
+
 
 
   ////// OTA Function

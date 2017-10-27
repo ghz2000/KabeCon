@@ -2,12 +2,13 @@
 #include "CiniParser.h"
 #include "rootPage.h"
 
+#define INIFNM "/config.ini"
+
 #include <Servo.h>
 Servo myservo;
 
 ESP8266WiFiMulti WiFiMulti;
 ESP8266WebServer server(80);
-
 
 #define servoPow 13
 //#define servoSig 1  //TX
@@ -40,7 +41,7 @@ void setup() {
   server.on("/off", handleOff);
   server.on("/turn", handleTurn);
 
-
+//--- ini File Sample ---
   server.on("/ini", handleIniSample);
   server.on("/writeini", handleWriteIni);
   server.on("/setini", handleSetIni);
@@ -48,7 +49,6 @@ void setup() {
   //for debug
   server.on("/procini", handleProcIni);
   server.on("/delini", handleDelIni);
-
 }
 
 
@@ -71,6 +71,8 @@ void loop() {
   delay(100);
 }
 
+//- handle for HTTP ------------------------------------------------------------------------
+
 // http://esp8266.local/
 // ↑ここにアクセス
 void handleRoot() {
@@ -79,6 +81,36 @@ void handleRoot() {
 }
 
 
+void handleOn() {
+  pos = maximum;
+  swOn();
+  
+  server.sendHeader("Location", "/", true);
+  server.send(301, "text/plain", "");
+}
+
+void handleOff() {
+  pos = minimum;
+  swOff();
+
+  server.sendHeader("Location", "/", true);
+  server.send(301, "text/plain", "");
+}
+
+void handleTurn(){
+ if(isOn){
+    pos = minimum;
+  }else{
+    pos = maximum;
+  }
+  swTurn();
+
+  server.sendHeader("Location", "/", true);
+  server.send(301, "text/plain", "");
+}
+
+
+//- Control Servo ------------------------------------------------------------------------
 
 void setServoParam(bool wifiSetup) {
   const unsigned long interval = 1000;
@@ -162,34 +194,7 @@ void swTurn(){
 }
 
 
-void handleOn() {
-  pos = maximum;
-  handleRoot();
-  swOn();
-}
-void handleOff() {
-  pos = minimum;
-  handleRoot();
-  swOff();
-}
-
-
-void handleTurn(){
- if(isOn){
-    pos = minimum;
-  }else{
-    pos = maximum;
-  }
-  handleRoot();
-  swTurn();
-}
-
-
-
 //- ini File Access Sample ------------------------------------------------------------------------
-
-#define INIFNM "/test.ini"
-
 
 void handleIniSample(){
   String message = "<HTML><BODY>";
@@ -426,7 +431,6 @@ void handleProcIni(){
 
   SPIFFS.end();
   server.send(200, "text/html", message);
-
 }
 
 void handleDelIni(){

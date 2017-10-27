@@ -6,7 +6,7 @@
 ESP8266WiFiMulti *m_WiFiMulti;
 ESP8266WebServer *m_server;
 ESP8266HTTPUpdateServer httpUpdater;
-#define INIFNM "/test.ini"
+#define INIFNM "/config.ini"
 
 void handleSearchSSID(){
   CiniParser testini;

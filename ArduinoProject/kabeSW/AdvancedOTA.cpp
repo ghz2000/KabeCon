@@ -1,15 +1,32 @@
 #include <Arduino.h>
 #include <FS.h>
 #include "AdvancedOTA.h"
+#include "CiniParser.h"
 
 ESP8266WiFiMulti *m_WiFiMulti;
 ESP8266WebServer *m_server;
 ESP8266HTTPUpdateServer httpUpdater;
+#define INIFNM "/test.ini"
 
 void handleSearchSSID(){
+  CiniParser testini;
+  if(testini.setIniFileName( INIFNM )){
+    Serial.println("File not exist");
+  }
+  String valu;
+  
   String message = "<HTML><HEAD></HEAD>";
   message += "<BODY>";
+  
+  message += "<B>now setting</B><BR>";
+  testini.rwIni("WiFi", "SSID", &valu, READ);
+  message += "SSID : ";
+  message += valu;
+  testini.rwIni("WiFi", "PASS", &valu, READ);
+  message += "<BR>PASS : ";
+  message += valu;
 
+  message += "<BR><BR><B>Serched SSID</B>";
   message += "<FORM method='GET' action='setssid'>";
   message += "<TABLE>";
 
@@ -42,11 +59,19 @@ void handleSearchSSID(){
 
 
 void handleSetSSID(){
+  CiniParser testini;
+  if(testini.setIniFileName( INIFNM )){
+    Serial.println("File not exist");
+  }
+
   String message = "<HTML><HEAD></HEAD>";
   message += "<BODY>";
 
   String ssid = m_server->arg("SSID");
   String pass = m_server->arg("PASS");
+
+  testini.rwIni("WiFi", "SSID", &ssid, WRITE);
+  testini.rwIni("WiFi", "PASS", &pass, WRITE);
 
   char cssid[30];
   ssid.toCharArray(cssid, ssid.length()+1);
@@ -58,65 +83,41 @@ void handleSetSSID(){
   Serial.print(":");
   Serial.println(cpass);
 
-    for(int i=0; i<10; i++){
+  for(int i=0; i<10; i++){
     switch(m_WiFiMulti->run()){
       case WL_CONNECTED:
         Serial.println("Connection Successful");
         Serial.print("IP address: ");
         Serial.println(WiFi.localIP());
-        break;
-      case WL_NO_SSID_AVAIL:
-        Serial.println("Searching SSID");
-        delay(1000);
-        continue;
-      case WL_CONNECT_FAILED:
-        Serial.println("Connection Failed. wrong password");
-        delay(1000);
-        continue;
-      case WL_IDLE_STATUS:
-        Serial.println("Connection Idle Status");
-        delay(1000);
-        continue;
-      case WL_DISCONNECTED:
-        Serial.println("Connection Disconnected");
-        delay(1000);
-        continue;
-      default :
-        Serial.println("default error");
-        delay(1000);
-        ESP.restart();
-        continue;
-    }
-    break;
-  }
-
-    for(int i=0; i<10; i++){
-    switch(m_WiFiMulti->run()){
-      case WL_CONNECTED:
         message += "Connection Successful<BR>";
         message += "IP address: ";
         message += WiFi.localIP();
         message += "<BR>";
         break;
       case WL_NO_SSID_AVAIL:
+        Serial.println("Searching SSID");
         message += "Searching SSID<BR>";
-        delay(5000);
+        delay(1000);
         continue;
       case WL_CONNECT_FAILED:
+        Serial.println("Connection Failed. wrong password");
         message += "Connection Failed. wrong password<BR>";
-        delay(5000);
+        delay(1000);
         continue;
       case WL_IDLE_STATUS:
+        Serial.println("Connection Idle Status");
         message += "Connection Idle Status";
-        delay(5000);
+        delay(1000);
         continue;
       case WL_DISCONNECTED:
+        Serial.println("Connection Disconnected");
         message += "Connection Disconnected";
-        delay(5000);
+        delay(1000);
         continue;
       default :
+        Serial.println("default error");
         message += "default error";
-        delay(5000);
+        delay(1000);
         ESP.restart();
         continue;
     }
@@ -127,7 +128,45 @@ void handleSetSSID(){
   m_server->send(200, "text/html", message);
 }
 
+//-------------------------------------------------------------------------
 
+
+String getContentType(String filename){
+  if(m_server->hasArg("download")) return "application/octet-stream";
+  else if(filename.endsWith(".ini")) return "text/plain";
+  else if(filename.endsWith(".txt")) return "text/plain";
+  else if(filename.endsWith(".htm")) return "text/html";
+  else if(filename.endsWith(".html")) return "text/html";
+  else if(filename.endsWith(".css")) return "text/css";
+  else if(filename.endsWith(".js")) return "application/javascript";
+  else if(filename.endsWith(".png")) return "image/png";
+  else if(filename.endsWith(".gif")) return "image/gif";
+  else if(filename.endsWith(".jpg")) return "image/jpeg";
+  else if(filename.endsWith(".ico")) return "image/x-icon";
+  else if(filename.endsWith(".xml")) return "text/xml";
+  else if(filename.endsWith(".pdf")) return "application/x-pdf";
+  else if(filename.endsWith(".zip")) return "application/x-zip";
+  else if(filename.endsWith(".gz")) return "application/x-gzip";
+  return "text/plain";
+}
+
+bool handleFileRead(String path){
+  Serial.println("handleFileRead: " + path);
+  if(path.endsWith("/")) path += "index.htm";
+  String contentType = getContentType(path);
+  String pathWithGz = path + ".gz";
+  if(SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)){
+    if(SPIFFS.exists(pathWithGz))
+      path += ".gz";
+    File file = SPIFFS.open(path, "r");
+    size_t sent = m_server->streamFile(file, contentType);
+    file.close();
+    return true;
+  }
+  return false;
+}
+
+//-------------------------------------------------------------------------
 
 void wifiSetup(ESP8266WiFiMulti *WiFiMulti, ESP8266WebServer *server){
   m_WiFiMulti = WiFiMulti;
@@ -138,45 +177,69 @@ void wifiSetup(ESP8266WiFiMulti *WiFiMulti, ESP8266WebServer *server){
 
 
   ////// WiFi Connection
+  CiniParser ini;
+  String ssid;
+  String pass;
+  if(ini.setIniFileName( INIFNM )){
+    Serial.println("File not exist");
+  }
 
   WiFi.mode(WIFI_AP_STA);
 
-  WiFi.softAP(ap_ssid, ap_pass);
+  ini.rwIni("WiFi", "APSSID", &ssid, READ);
+  ini.rwIni("WiFi", "APPASS", &pass, READ);  
+  if(ssid.length()*pass.length()){
+    WiFi.softAP(ssid.c_str(), pass.c_str());
+  }else{
+    WiFi.softAP(ap_ssid, ap_pass);
+  }
   Serial.print("AP mode IP:");
   Serial.println(WiFi.softAPIP());
+  Serial.print(ap_ssid);
+  Serial.print(" : ");
+  Serial.println(ap_pass);
 
-  WiFiMulti->addAP(sta_ssid, sta_pass);
 
-  for(int i=0; i<10; i++){
-    switch(WiFiMulti->run()){
-      case WL_CONNECTED:
-        Serial.println("Connection Successful");
-        Serial.print("IP address: ");
-        Serial.println(WiFi.localIP());
-        break;
-      case WL_NO_SSID_AVAIL:
-        Serial.println("Searching SSID");
-        delay(5000);
-        continue;
-      case WL_CONNECT_FAILED:
-        Serial.println("Connection Failed. wrong password");
-        delay(5000);
-        continue;
-      case WL_IDLE_STATUS:
-        Serial.println("Connection Idle Status");
-        delay(5000);
-        continue;
-      case WL_DISCONNECTED:
-        Serial.println("Connection Disconnected");
-        delay(5000);
-        continue;
-      default :
-        Serial.println("default error");
-        delay(5000);
-        ESP.restart();
-        continue;
+  ini.rwIni("WiFi", "SSID", &ssid, READ);
+  ini.rwIni("WiFi", "PASS", &pass, READ);
+  if(ssid.length()*pass.length()){
+    WiFiMulti->addAP(ssid.c_str(), pass.c_str());
+    
+    Serial.print(ssid);
+    Serial.print(":");
+    Serial.println(pass);
+    
+    for(int i=0; i<10; i++){
+      switch(WiFiMulti->run()){
+        case WL_CONNECTED:
+          Serial.println("Connection Successful");
+          Serial.print("IP address: ");
+          Serial.println(WiFi.localIP());
+          break;
+        case WL_NO_SSID_AVAIL:
+          Serial.println("Searching SSID");
+          delay(5000);
+          continue;
+        case WL_CONNECT_FAILED:
+          Serial.println("Connection Failed. wrong password");
+          delay(5000);
+          continue;
+        case WL_IDLE_STATUS:
+          Serial.println("Connection Idle Status");
+          delay(5000);
+          continue;
+        case WL_DISCONNECTED:
+          Serial.println("Connection Disconnected");
+          delay(5000);
+          continue;
+        default :
+          Serial.println("default error");
+          delay(5000);
+          ESP.restart();
+          continue;
+      }
+      break;
     }
-    break;
   }
 
 
@@ -222,6 +285,7 @@ void wifiSetup(ESP8266WiFiMulti *WiFiMulti, ESP8266WebServer *server){
 
 
   m_server->onNotFound([](){
+    if(!handleFileRead(m_server->uri()))
       m_server->send(404, "text/plain", "FileNotFound");
   });
 

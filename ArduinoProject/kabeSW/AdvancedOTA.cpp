@@ -17,14 +17,44 @@ void handleSearchSSID(){
   
   String message = "<HTML><HEAD></HEAD>";
   message += "<BODY>";
-  
-  message += "<B>now setting</B><BR>";
+
+//Wi-Fi 設定表示
+  message += "<B>WiFi Setting</B><BR>";
   testini.rwIni("WiFi", "SSID", &valu, READ);
   message += "SSID : ";
   message += valu;
   testini.rwIni("WiFi", "PASS", &valu, READ);
   message += "<BR>PASS : ";
   message += valu;
+  message += "<BR>";
+  message += "WiFi IP Address : ";
+  message += String(WiFi.localIP()[0]) + '.' + String(WiFi.localIP()[1]) + '.' + String(WiFi.localIP()[2]) + '.' + String(WiFi.localIP()[3]);
+  message += "<BR>";
+  message += "AP mode Address : ";
+  message += String(WiFi.softAPIP()[0]) + '.' + String(WiFi.softAPIP()[1]) + '.' + String(WiFi.softAPIP()[2]) + '.' + String(WiFi.softAPIP()[3]);
+  message += "<BR>";
+
+  message += "Wi-Fi Status :";
+  switch(m_WiFiMulti->run()){
+  case WL_CONNECTED:
+    message += "CONNECTED";
+    break;
+  case WL_NO_SSID_AVAIL:
+    message += "NO SSID AVAIL";
+    break;
+  case WL_CONNECT_FAILED:
+    message += "CONNECT FAILED";
+    break;
+  case WL_IDLE_STATUS:
+    message += "IDLE";
+    break;
+  case WL_DISCONNECTED:
+    message += "DISCONNECTED";
+    break;
+  default :
+    message += "ERROR";
+  }
+  message += "<BR><BR>";
 
   message += "<BR><BR><B>Serched SSID</B>";
   message += "<FORM method='GET' action='setssid'>";
@@ -90,8 +120,8 @@ void handleSetSSID(){
         Serial.print("IP address: ");
         Serial.println(WiFi.localIP());
         message += "Connection Successful<BR>";
-        message += "IP address: ";
-        message += WiFi.localIP();
+        message += "WiFi IP Address : ";
+        message += String(WiFi.localIP()[0]) + '.' + String(WiFi.localIP()[1]) + '.' + String(WiFi.localIP()[2]) + '.' + String(WiFi.localIP()[3]);
         message += "<BR>";
         break;
       case WL_NO_SSID_AVAIL:

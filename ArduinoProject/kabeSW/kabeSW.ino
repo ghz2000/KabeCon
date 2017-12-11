@@ -33,7 +33,11 @@ void setup() {
   pinMode(rightSW, INPUT);
   pinMode(bootSW, INPUT);
   myservo.attach(servoSig);
-  setServoParam(false);
+
+  if(initialize()){
+    //されていなかったら
+    setServoParam(false);
+  }
   
   wifiSetup(&WiFiMulti, &server);
   server.on("/", handleRoot);
@@ -64,6 +68,9 @@ void loop() {
   }
 
   if (digitalRead(bootSW) == LOW) {
+    delay(100);
+    while (digitalRead(bootSW) == LOW) {}
+
     setServoParam(true);
     while (digitalRead(bootSW) == LOW) {}
   }
@@ -75,42 +82,54 @@ void loop() {
 
 // http://esp8266.local/
 // ↑ここにアクセス
+
 void handleRoot() {
   Serial.println("root");
   server.send(200, "text/html", ROOT_HTML );
 }
 
-
 void handleOn() {
-  pos = maximum;
   swOn();
-  
   server.sendHeader("Location", "/", true);
-  server.send(301, "text/plain", "");
+  server.send(302, "text/plain", "");
 }
 
 void handleOff() {
-  pos = minimum;
   swOff();
-
   server.sendHeader("Location", "/", true);
-  server.send(301, "text/plain", "");
+  server.send(302, "text/plain", "");
 }
 
 void handleTurn(){
- if(isOn){
-    pos = minimum;
-  }else{
-    pos = maximum;
-  }
   swTurn();
-
   server.sendHeader("Location", "/", true);
-  server.send(301, "text/plain", "");
+  server.send(302, "text/plain", "");
 }
 
-
 //- Control Servo ------------------------------------------------------------------------
+
+// 取得完了 : 0
+// 取得失敗 : 1
+int initialize(){
+  ////// ini Update
+  CiniParser ini;
+  String strMinimum, strMaximum;
+  int res1=0,res2=0;
+  
+  if(ini.setIniFileName( INIFNM )){
+    //Serial.println("File not exist");
+  }
+
+  res1 = ini.rwIni("KabeCon", "minimum1", &strMinimum, READ);
+  res2 = ini.rwIni("KabeCon", "maximum1", &strMaximum, READ);
+  
+  if(res1 == 3 && res2 == 3){
+    minimum = strMinimum.toInt();
+    maximum = strMaximum.toInt();
+    return 0;
+  }
+  return 1;
+}
 
 void setServoParam(bool wifiSetup) {
   const unsigned long interval = 1000;
@@ -125,8 +144,6 @@ void setServoParam(bool wifiSetup) {
 //  int minimum = 256;
 //  int maximum = 0;
   myservo.write(pos);
-
-  while (digitalRead(bootSW) == LOW) {}
 
   while(1){
     if(wifiSetup)listener();
@@ -161,6 +178,21 @@ void setServoParam(bool wifiSetup) {
       break;
     }
   }
+
+  ////// ini Update
+  if(maximum){
+    CiniParser ini;
+    String strMinimum;
+    String strMaximum;
+    strMinimum = minimum;
+    strMaximum = maximum;
+    if(ini.setIniFileName( INIFNM )){
+      //Serial.println("File not exist");
+    }
+    ini.rwIni("KabeCon", "minimum1", &strMinimum, WRITE);
+    ini.rwIni("KabeCon", "maximum1", &strMaximum, WRITE);
+  }
+  
 }
 
 void swOn() {

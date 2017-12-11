@@ -21,7 +21,7 @@
     border-bottom: none;\
 }\
 html{font-size: 62.5%;}\
-body{font-size: 12em;}\
+body{font-size: 10em;}\
 </style></HEAD>\
 <BODY>\
 \
@@ -29,31 +29,14 @@ body{font-size: 12em;}\
 <a href='/off' class='square_btn'>OFF</a><BR>\
 <a href='/turn' class='square_btn'>Change</a><BR><BR>\
 \
-now value=\
-<BR><HR>\
-\
-maximum =\
-<BR>\
-minimum =\
 <BR><BR><HR>\
 \
-<FORM method='GET' action='/'>\
-<TABLE>\
-<TR><TD>\
-<INPUT TYPE='value' name='servo' value=''\
-'></TD><TD>\
-</TD></TR>\
-</TABLE>\
-\
-<INPUT type='submit' value='set'>\
-</FORM><BR><BR>\
-\
-<B><BIG><BIG>ini ファイルが簡単に使えるパーサー サンプル</B></BIG></BIG><BR><BR>\
+<B><BIG><BIG>設定</B></BIG></BIG><BR>\
 <HR>\
-<A HREF='/ini'>iniファイルパーサー サンプル</A><BR>\
-<A HREF='/ssid'>WiFi SSID設定用ページ</A><BR>\
-<A HREF='/procini'>デバッグ用ページ</A><BR>\
-<A HREF='/delini'>iniファイルを削除する(デバッグ用)</A><BR>\
+<A HREF='/ssid'>WiFi 設定</A><BR>\
+<A HREF='/ini'>iniファイル直接設定</A><BR>\
+<A HREF='/procini'>iniデバッグ用</A><BR>\
+<A HREF='/delini'>設定を初期化</A><BR>\
 </BODY></HTML>")
 
 

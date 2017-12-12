@@ -16,3 +16,7 @@ http://ghz2000.com/wordpress/?p=1016
 壁コン 投稿一覧
 http://ghz2000.com/wordpress/?cat=63
 
+# バージョン履歴
+2.0 設定がiniファイルに保存できるようになりました｡
+1.1 STAモードが追加されました｡
+1.0 初期版

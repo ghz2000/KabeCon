@@ -13,9 +13,6 @@
 //APモード SSID,PASS
 #define  ap_ssid  "Kabekon"
 #define  ap_pass  "password"
-//STAモード SSID,PASS
-#define sta_ssid  "Kabekon"
-#define sta_pass  "password"
 
 //http://esp8266.local
 #define mdns_name "esp8266"

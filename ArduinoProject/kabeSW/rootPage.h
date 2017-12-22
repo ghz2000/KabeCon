@@ -37,6 +37,8 @@ body{font-size: 10em;}\
 <A HREF='/ini'>iniファイル直接設定</A><BR>\
 <A HREF='/procini'>iniデバッグ用</A><BR>\
 <A HREF='/delini'>設定を初期化</A><BR>\
+<A HREF='/update'>ファームウェア更新</A><BR>\
+Ver.2.01\
 </BODY></HTML>")
 
 

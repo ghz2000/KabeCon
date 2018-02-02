@@ -1,8 +1,18 @@
 #include "AdvancedOTA.h"
 #include "CiniParser.h"
 #include "rootPage.h"
+#include "CirRemote.h"
 
 #define INIFNM "/config.ini"
+
+#define servoPow 13
+//#define servoSig 1  //TX
+#define irLed 16
+#define servoSig 14  //REMOTE
+#define leftSW 4
+#define rightSW 5
+#define bootSW 0
+
 
 #include <Servo.h>
 Servo myservo;
@@ -10,12 +20,7 @@ Servo myservo;
 ESP8266WiFiMulti WiFiMulti;
 ESP8266WebServer server(80);
 
-#define servoPow 13
-//#define servoSig 1  //TX
-#define servoSig 14  //REMOTE
-#define leftSW 4
-#define rightSW 5
-#define bootSW 0
+CirRemote ir(irLed);
 
 int pos = 100;
 int minimum = 256;
@@ -60,7 +65,8 @@ void loop() {
   listener();
 
   if (digitalRead(leftSW) == LOW) {
-    swOff();
+    ir.irOut("abxDEAs8", 30);
+//    swOff();
   }
 
   if (digitalRead(rightSW) == LOW) {
@@ -77,6 +83,7 @@ void loop() {
 
   delay(100);
 }
+
 
 //- handle for HTTP ------------------------------------------------------------------------
 

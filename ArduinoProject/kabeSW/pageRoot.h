@@ -1,5 +1,5 @@
-#ifndef __ROOTPAGE__
-#define __ROOTPAGE__
+#ifndef __PAGEROOT__
+#define __PAGEROOT__
 
 #define ROOT_HTML F("\
 <HTML><HTAD><meta http-equiv='Content-Type' content='text/html; charset=utf-8'>\
@@ -34,15 +34,18 @@ body{font-size: 10em;}\
 <B><BIG><BIG>設定</B></BIG></BIG><BR>\
 <HR>\
 <A HREF='/ssid'>WiFi 設定</A><BR>\
-<A HREF='/ini'>iniファイル直接設定</A><BR>\
-<A HREF='/procini'>iniデバッグ用</A><BR>\
+<A HREF='/setting'>壁コン 設定</A><BR>\
+<BR>\
 <A HREF='/delini'>設定を初期化</A><BR>\
 <A HREF='/update'>ファームウェア更新</A><BR>\
+<BR>\
+<A HREF='/ini'>iniファイル直接設定</A><BR>\
+<A HREF='/procini'>iniデバッグ用</A><BR>\
 Ver.2.01\
 </BODY></HTML>")
 
 
-#endif // __ROOTPAGE__
+#endif // __PAGEROOT__
 
 
 // クラスインスタンスを作成

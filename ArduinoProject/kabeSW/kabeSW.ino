@@ -1,6 +1,10 @@
 #include "AdvancedOTA.h"
 #include "CiniParser.h"
-#include "rootPage.h"
+#include "pageRoot.h"
+#include "pageSetting.h"
+#include "CbuttonInterrupt.h"
+
+CbuttonInterrupt leftInt;
 
 #define INIFNM "/config.ini"
 
@@ -24,8 +28,8 @@ int maximum = 0;
 bool isOn = false;
 
 void setup() {
-//  Serial.begin(74880);
-  Serial.end();
+  Serial.begin(115200);
+//  Serial.end();
   
   digitalWrite(servoPow, LOW);
   pinMode(servoPow, OUTPUT);
@@ -36,11 +40,12 @@ void setup() {
 
   if(initialize()){
     //されていなかったら
-    setServoParam(false);
+//    setServoParam(false);
   }
   
   wifiSetup(&WiFiMulti, &server);
   server.on("/", handleRoot);
+  server.on("/setting", handleSetting);
   server.on("/on", handleOn);
   server.on("/off", handleOff);
   server.on("/turn", handleTurn);
@@ -53,11 +58,40 @@ void setup() {
   //for debug
   server.on("/procini", handleProcIni);
   server.on("/delini", handleDelIni);
+
+
+  leftInt.initialize(leftSW, intChanged, intDeBounced, intFunction);
+  leftInt.setInterrupt();
+
 }
+
+void intChanged(){
+  leftInt.changed();
+}
+
+void intDeBounced(){
+  leftInt.deBounced();
+}
+
+void intFunction(){
+  leftInt.function();
+}
+
 
 
 void loop() {
   listener();
+
+
+  switch (leftInt.getClick() ){
+    case 0:
+      break;
+    default:
+    case 1:
+      Serial.println("kokode 1");
+      leftInt.clear();
+  }
+  
 
   if (digitalRead(leftSW) == LOW) {
     swOff();
@@ -84,8 +118,11 @@ void loop() {
 // ↑ここにアクセス
 
 void handleRoot() {
-  Serial.println("root");
   server.send(200, "text/html", ROOT_HTML );
+}
+
+void handleSetting() {
+  server.send(200, "text/html", SETTING_HTML );
 }
 
 void handleOn() {

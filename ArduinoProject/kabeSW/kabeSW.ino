@@ -3,10 +3,20 @@
 #include "pageRoot.h"
 #include "pageSetting.h"
 #include "CbuttonInterrupt.h"
+#include "CirRemote.h"
 
 CbuttonInterrupt leftInt;
 
 #define INIFNM "/config.ini"
+
+#define servoPow 13
+//#define servoSig 1  //TX
+#define irLed 16
+#define servoSig 14  //REMOTE
+#define leftSW 4
+#define rightSW 5
+#define bootSW 0
+
 
 #include <Servo.h>
 Servo myservo;
@@ -14,12 +24,7 @@ Servo myservo;
 ESP8266WiFiMulti WiFiMulti;
 ESP8266WebServer server(80);
 
-#define servoPow 13
-//#define servoSig 1  //TX
-#define servoSig 14  //REMOTE
-#define leftSW 4
-#define rightSW 5
-#define bootSW 0
+CirRemote ir(irLed);
 
 int pos = 100;
 int minimum = 256;
@@ -30,7 +35,7 @@ bool isOn = false;
 void setup() {
   Serial.begin(115200);
 //  Serial.end();
-  
+
   digitalWrite(servoPow, LOW);
   pinMode(servoPow, OUTPUT);
   pinMode(leftSW, INPUT);
@@ -42,7 +47,7 @@ void setup() {
     //されていなかったら
 //    setServoParam(false);
   }
-  
+
   wifiSetup(&WiFiMulti, &server);
   server.on("/", handleRoot);
   server.on("/setting", handleSetting);
@@ -91,10 +96,11 @@ void loop() {
       Serial.println("kokode 1");
       leftInt.clear();
   }
-  
+
 
   if (digitalRead(leftSW) == LOW) {
-    swOff();
+    ir.irOut("abxDEAs8", 30);
+//    swOff();
   }
 
   if (digitalRead(rightSW) == LOW) {
@@ -111,6 +117,7 @@ void loop() {
 
   delay(100);
 }
+
 
 //- handle for HTTP ------------------------------------------------------------------------
 
@@ -152,14 +159,14 @@ int initialize(){
   CiniParser ini;
   String strMinimum, strMaximum;
   int res1=0,res2=0;
-  
+
   if(ini.setIniFileName( INIFNM )){
     //Serial.println("File not exist");
   }
 
   res1 = ini.rwIni("KabeCon", "minimum1", &strMinimum, READ);
   res2 = ini.rwIni("KabeCon", "maximum1", &strMaximum, READ);
-  
+
   if(res1 == 3 && res2 == 3){
     minimum = strMinimum.toInt();
     maximum = strMaximum.toInt();
@@ -229,7 +236,7 @@ void setServoParam(bool wifiSetup) {
     ini.rwIni("KabeCon", "minimum1", &strMinimum, WRITE);
     ini.rwIni("KabeCon", "maximum1", &strMaximum, WRITE);
   }
-  
+
 }
 
 void swOn() {
@@ -320,7 +327,7 @@ void handleIniSample(){
     File f = dir.openFile("r");
     message += f.size();
     message += "</TD></TR>";
-    f.close(); 
+    f.close();
   }
   message += "</TABLE><BR><BR>";
 
@@ -364,7 +371,7 @@ void handleIniSample(){
   message += valu;
   message += "'disabled='disabled'><INPUT type=submit value='Read'></FORM>";
 
-  
+
 //ini ファイルの内容を表示
   message += "<B>ini file viewer </B><BR>";
   message += "<FORM method=POST action=/setini><TEXTAREA NAME=ini cols=100 rows=40>";
@@ -389,7 +396,7 @@ void handleIniSample(){
   message += "<INPUT type=hidden name='Name' value='PASS' >";
   message += "Value: <INPUT type=text name='Value'>";
   message += "<INPUT type=submit value='Update PASS'></FORM>";
-  
+
   message += "</BODY></HTML>";
   server.send(200, "text/html", message);
 }
@@ -410,14 +417,14 @@ void handleWriteIni(){
   if(sect.length()*name.length()){
     testini.rwIni(sect, name, &valu, WRITE);
   }
-  
+
   server.sendHeader("Location", "/ini", true);
   server.send(301, "text/plain", "");
 }
 
 void handleSetIni(){
   String ini = server.arg("ini");
-  
+
   CiniParser testini;
   if(testini.setIniFileName( INIFNM )){
     Serial.println("File not exist");
@@ -434,7 +441,7 @@ void handleProcIni(){
   String message = "<HTML><BODY>";
 
   SPIFFS.begin();
-  
+
   FSInfo fsinfo;
   SPIFFS.info(fsinfo);
 
@@ -480,10 +487,10 @@ void handleProcIni(){
             testini.readIniFile(&message);
     message += "</TD></TR>";
     f.close();
- 
+
   }
   message += "</TABLE><BR><BR>";
-  
+
 
   message += "<FORM method=POST action=/setini><TEXTAREA NAME=ini cols=100 rows=40>";
 
@@ -512,7 +519,7 @@ void handleDelIni(){
   message += testini.deleteIniFile();
 
   message += "<FORM method=POST action=/setini><TEXTAREA NAME=ini cols=100 rows=40>";
-  
+
   testini.readIniFile(&message);
 
   message += "</TEXTAREA>";
@@ -520,4 +527,3 @@ void handleDelIni(){
   message += "</BODY></HTML><FORM>";
   server.send(200, "text/html", message);
 }
-

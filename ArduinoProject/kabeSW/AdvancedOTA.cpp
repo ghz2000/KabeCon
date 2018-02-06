@@ -91,7 +91,8 @@ void handleSearchSSID(){
 void handleSetSSID(){
   CiniParser testini;
   if(testini.setIniFileName( INIFNM )){
-    Serial.println("File not exist");
+//    Serial.println("File not exist");
+    testini.createIniFile();
   }
 
   String message = "<HTML><HEAD></HEAD>";
@@ -113,6 +114,8 @@ void handleSetSSID(){
   Serial.print(":");
   Serial.println(cpass);
 
+  String ipadd;
+
   for(int i=0; i<10; i++){
     switch(m_WiFiMulti->run()){
       case WL_CONNECTED:
@@ -121,8 +124,11 @@ void handleSetSSID(){
         Serial.println(WiFi.localIP());
         message += "Connection Successful<BR>";
         message += "WiFi IP Address : ";
-        message += String(WiFi.localIP()[0]) + '.' + String(WiFi.localIP()[1]) + '.' + String(WiFi.localIP()[2]) + '.' + String(WiFi.localIP()[3]);
-        message += "<BR>";
+        ipadd = String(WiFi.localIP()[0]) + '.' + String(WiFi.localIP()[1]) + '.' + String(WiFi.localIP()[2]) + '.' + String(WiFi.localIP()[3]);
+        message += ipadd;
+        message += "<BR><BR><BR>";
+        message += "<A HREF=http://" + ipadd + "> http://" + ipadd + "</A><BR>";
+        message += "<A HREF=http://192.168.4.1> http://192.168.4.1</A><BR>";
         break;
       case WL_NO_SSID_AVAIL:
         Serial.println("Searching SSID");
